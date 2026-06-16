@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+DerivedData/
+extractor/config.json
+extractor/output/
+

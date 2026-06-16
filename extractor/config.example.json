@@ -1,0 +1,15 @@
+{
+  "syncDays": 30,
+  "syncMonth": null,
+  "startDate": null,
+  "endDate": null,
+  "mail": {
+    "emailAddress": "your-name@icloud.com",
+    "appPassword": "xxxx-xxxx-xxxx-xxxx",
+    "imapHost": "imap.mail.me.com",
+    "imapPort": 993,
+    "useSSL": true,
+    "mailbox": "INBOX"
+  },
+  "disabledParserTypes": []
+}
