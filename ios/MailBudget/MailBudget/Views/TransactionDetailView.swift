@@ -24,8 +24,12 @@ struct TransactionDetailView: View {
             }
 
             Section("取得元") {
+                LabeledContent("データ種別", value: draft.sourceKind.displayName)
                 LabeledContent("ソース", value: draft.source)
                 LabeledContent("メールID", value: draft.sourceMessageId)
+                if let importedAt = draft.importedAt {
+                    LabeledContent("取込日時", value: Formatters.dateTime.string(from: importedAt))
+                }
                 if let snippet = draft.snippet, !snippet.isEmpty {
                     Text(snippet)
                         .font(.footnote)
@@ -52,4 +56,3 @@ struct TransactionDetailView: View {
         .navigationTitle("明細詳細")
     }
 }
-

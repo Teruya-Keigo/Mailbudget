@@ -22,6 +22,17 @@
 		10000000000000000000000D /* SummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000D /* SummaryView.swift */; };
 		10000000000000000000000E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000E /* SettingsView.swift */; };
 		10000000000000000000000F /* sample_transactions.json in Resources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000000F /* sample_transactions.json */; };
+		100000000000000000000010 /* TransactionSourceKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000010 /* TransactionSourceKind.swift */; };
+		100000000000000000000011 /* DataStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000011 /* DataStatus.swift */; };
+		100000000000000000000012 /* ImportSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000012 /* ImportSource.swift */; };
+		100000000000000000000013 /* ImportBatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000013 /* ImportBatch.swift */; };
+		100000000000000000000014 /* TransactionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000014 /* TransactionRepository.swift */; };
+		100000000000000000000015 /* SampleDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000015 /* SampleDataProvider.swift */; };
+		100000000000000000000016 /* TransactionImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000016 /* TransactionImportService.swift */; };
+		100000000000000000000017 /* SyncStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000017 /* SyncStateStore.swift */; };
+		100000000000000000000018 /* DataStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000018 /* DataStatusBanner.swift */; };
+		100000000000000000000019 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200000000000000000000019 /* EmptyStateView.swift */; };
+		10000000000000000000001A /* ImportResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20000000000000000000001A /* ImportResultView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +52,17 @@
 		20000000000000000000000D /* SummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryView.swift; sourceTree = "<group>"; };
 		20000000000000000000000E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		20000000000000000000000F /* sample_transactions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sample_transactions.json; sourceTree = "<group>"; };
+		200000000000000000000010 /* TransactionSourceKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionSourceKind.swift; sourceTree = "<group>"; };
+		200000000000000000000011 /* DataStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStatus.swift; sourceTree = "<group>"; };
+		200000000000000000000012 /* ImportSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSource.swift; sourceTree = "<group>"; };
+		200000000000000000000013 /* ImportBatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportBatch.swift; sourceTree = "<group>"; };
+		200000000000000000000014 /* TransactionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRepository.swift; sourceTree = "<group>"; };
+		200000000000000000000015 /* SampleDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleDataProvider.swift; sourceTree = "<group>"; };
+		200000000000000000000016 /* TransactionImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionImportService.swift; sourceTree = "<group>"; };
+		200000000000000000000017 /* SyncStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStateStore.swift; sourceTree = "<group>"; };
+		200000000000000000000018 /* DataStatusBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStatusBanner.swift; sourceTree = "<group>"; };
+		200000000000000000000019 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		20000000000000000000001A /* ImportResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportResultView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +108,10 @@
 			isa = PBXGroup;
 			children = (
 				200000000000000000000002 /* Transaction.swift */,
+				200000000000000000000010 /* TransactionSourceKind.swift */,
+				200000000000000000000011 /* DataStatus.swift */,
+				200000000000000000000012 /* ImportSource.swift */,
+				200000000000000000000013 /* ImportBatch.swift */,
 				200000000000000000000003 /* MailSource.swift */,
 			);
 			path = Models;
@@ -96,6 +122,10 @@
 			children = (
 				200000000000000000000004 /* DateCoding.swift */,
 				200000000000000000000005 /* TransactionStore.swift */,
+				200000000000000000000014 /* TransactionRepository.swift */,
+				200000000000000000000015 /* SampleDataProvider.swift */,
+				200000000000000000000016 /* TransactionImportService.swift */,
+				200000000000000000000017 /* SyncStateStore.swift */,
 				200000000000000000000006 /* KeychainStore.swift */,
 			);
 			path = Services;
@@ -107,6 +137,9 @@
 				200000000000000000000007 /* Formatters.swift */,
 				200000000000000000000008 /* RootView.swift */,
 				200000000000000000000009 /* HomeView.swift */,
+				200000000000000000000018 /* DataStatusBanner.swift */,
+				200000000000000000000019 /* EmptyStateView.swift */,
+				20000000000000000000001A /* ImportResultView.swift */,
 				20000000000000000000000A /* TransactionRow.swift */,
 				20000000000000000000000B /* TransactionListView.swift */,
 				20000000000000000000000C /* TransactionDetailView.swift */,
@@ -208,6 +241,17 @@
 				10000000000000000000000C /* TransactionDetailView.swift in Sources */,
 				10000000000000000000000D /* SummaryView.swift in Sources */,
 				10000000000000000000000E /* SettingsView.swift in Sources */,
+				100000000000000000000010 /* TransactionSourceKind.swift in Sources */,
+				100000000000000000000011 /* DataStatus.swift in Sources */,
+				100000000000000000000012 /* ImportSource.swift in Sources */,
+				100000000000000000000013 /* ImportBatch.swift in Sources */,
+				100000000000000000000014 /* TransactionRepository.swift in Sources */,
+				100000000000000000000015 /* SampleDataProvider.swift in Sources */,
+				100000000000000000000016 /* TransactionImportService.swift in Sources */,
+				100000000000000000000017 /* SyncStateStore.swift in Sources */,
+				100000000000000000000018 /* DataStatusBanner.swift in Sources */,
+				100000000000000000000019 /* EmptyStateView.swift in Sources */,
+				10000000000000000000001A /* ImportResultView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

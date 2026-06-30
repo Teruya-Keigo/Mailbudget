@@ -1,17 +1,49 @@
 import Foundation
 import SwiftUI
-import UniformTypeIdentifiers
 
 @MainActor
 final class TransactionStore: ObservableObject {
     @Published private(set) var transactions: [Transaction] = []
-    @Published var lastSyncMessage = "未同期"
+    @Published private(set) var dataStatus: DataStatus = .empty
+    @Published private(set) var lastImportBatch: ImportBatch?
+    @Published var lastSyncMessage = "明細データはまだありません"
     @Published var mailSource = MailSource()
 
-    private let fileName = "transactions.json"
+    private let repository: TransactionRepository
+    private let sampleDataProvider: SampleDataProvider
+    private let importService: TransactionImportService
+    private let syncStateStore: SyncStateStore
 
-    init() {
+    init(
+        repository: TransactionRepository = TransactionRepository(),
+        sampleDataProvider: SampleDataProvider = SampleDataProvider(),
+        importService: TransactionImportService = TransactionImportService(),
+        syncStateStore: SyncStateStore = SyncStateStore()
+    ) {
+        self.repository = repository
+        self.sampleDataProvider = sampleDataProvider
+        self.importService = importService
+        self.syncStateStore = syncStateStore
+        lastImportBatch = syncStateStore.loadLastImportBatch()
         load()
+    }
+
+    var isShowingSample: Bool {
+        dataStatus.isSample
+    }
+
+    var sourceKindCounts: [(kind: TransactionSourceKind, count: Int)] {
+        TransactionSourceKind.allCases.compactMap { kind in
+            let count = transactions.filter { $0.sourceKind == kind }.count
+            return count > 0 ? (kind, count) : nil
+        }
+    }
+
+    var hasSavedSampleOnlyWarning: Bool {
+        guard case .loadedFromDocuments = dataStatus else {
+            return false
+        }
+        return isBundledSampleSet(transactions)
     }
 
     var totalThisMonth: Int {
@@ -59,40 +91,102 @@ final class TransactionStore: ObservableObject {
         } else {
             transactions.append(updated)
         }
+        if dataStatus.isSample {
+            sortTransactions()
+            lastSyncMessage = "サンプル表示中の変更は保存されません"
+            return
+        }
         sortAndSave()
     }
 
     func delete(_ transaction: Transaction) {
         transactions.removeAll { $0.id == transaction.id }
-        save()
+        if dataStatus.isSample {
+            lastSyncMessage = "サンプル表示中の変更は保存されません"
+            return
+        }
+        if save() {
+            refreshLoadedStatus(message: "明細を削除しました")
+        }
     }
 
     func deleteAll() {
         transactions.removeAll()
-        save()
+        do {
+            try repository.deleteTransactions()
+            syncStateStore.clear()
+            lastImportBatch = nil
+            dataStatus = .empty
+            lastSyncMessage = "保存済みデータを削除しました"
+        } catch {
+            dataStatus = .error(message: "保存済みデータを削除できませんでした")
+            lastSyncMessage = "保存済みデータを削除できませんでした"
+        }
+    }
+
+    func showSampleData() {
+        do {
+            transactions = try sampleDataProvider.loadSampleTransactions()
+            sortTransactions()
+            dataStatus = .sample(count: transactions.count)
+            lastSyncMessage = "サンプルデータを \(transactions.count) 件表示中です"
+        } catch {
+            dataStatus = .error(message: "サンプルデータを読み込めませんでした")
+            lastSyncMessage = "サンプルJSONを読み込めませんでした"
+        }
+    }
+
+    func clearSampleData() {
+        load()
+    }
+
+    func importJSON(from url: URL) {
+        let didStartAccessing = url.startAccessingSecurityScopedResource()
+        defer {
+            if didStartAccessing {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let baseRows = try rowsForImportBase()
+            let result = try importService.importTransactions(
+                from: data,
+                fileName: url.lastPathComponent,
+                into: baseRows
+            )
+
+            transactions = result.transactions.sorted { $0.date > $1.date }
+            let rowsToSave = transactions.filter { $0.sourceKind != .sample }
+            try repository.saveTransactions(rowsToSave)
+            lastImportBatch = result.batch
+            syncStateStore.saveLastImportBatch(result.batch)
+            dataStatus = .imported(count: transactions.count, importedAt: result.batch.finishedAt)
+            lastSyncMessage = result.batch.message
+        } catch {
+            dataStatus = .error(message: "JSONを読み込めませんでした")
+            lastSyncMessage = "JSONを読み込めませんでした。既存の明細データは変更されていません。"
+        }
     }
 
     func importBundledSample() {
-        guard let url = Bundle.main.url(forResource: "sample_transactions", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let rows = try? DateCoding.decoder().decode([Transaction].self, from: data)
-        else {
-            lastSyncMessage = "サンプルJSONを読み込めませんでした"
-            return
-        }
-        transactions = rows
-        sortAndSave()
-        lastSyncMessage = "サンプルを \(rows.count) 件読み込みました"
+        showSampleData()
     }
 
     func exportJSON() -> URL? {
-        save()
-        return storageURL()
+        if dataStatus.isSample {
+            return writeTemporaryJSON(named: "sample_transactions_export.json", rows: transactions)
+        }
+        guard save() else {
+            return nil
+        }
+        return repository.storageURL()
     }
 
     func exportCSV() -> URL? {
         let url = temporaryURL(named: "transactions.csv")
-        let header = "date,amount,merchant,category,paymentMethod,sourceMessageId,isConfirmed\n"
+        let header = "date,amount,merchant,category,paymentMethod,sourceKind,sourceMessageId,isConfirmed\n"
         let body = transactions.map { transaction in
             [
                 DateCoding.isoDate.string(from: transaction.date),
@@ -100,6 +194,7 @@ final class TransactionStore: ObservableObject {
                 csv(transaction.merchant),
                 csv(transaction.category),
                 csv(transaction.paymentMethod),
+                csv(transaction.sourceKind.rawValue),
                 csv(transaction.sourceMessageId),
                 String(transaction.isConfirmed)
             ].joined(separator: ",")
@@ -114,33 +209,93 @@ final class TransactionStore: ObservableObject {
     }
 
     private func load() {
-        let url = storageURL()
-        if FileManager.default.fileExists(atPath: url.path),
-           let data = try? Data(contentsOf: url),
-           let rows = try? DateCoding.decoder().decode([Transaction].self, from: data) {
-            transactions = rows
-            return
+        do {
+            guard repository.exists() else {
+                transactions = []
+                dataStatus = .empty
+                lastSyncMessage = "明細データはまだありません"
+                return
+            }
+
+            transactions = try repository.loadTransactions().sorted { $0.date > $1.date }
+            if transactions.isEmpty {
+                dataStatus = .empty
+                lastSyncMessage = "明細データはまだありません"
+            } else {
+                dataStatus = .loadedFromDocuments(
+                    count: transactions.count,
+                    updatedAt: repository.lastModifiedAt()
+                )
+                if hasSavedSampleOnlyWarning {
+                    lastSyncMessage = "現在保存されているデータはサンプルデータの可能性があります"
+                } else {
+                    lastSyncMessage = "保存済みデータを \(transactions.count) 件読み込みました"
+                }
+            }
+        } catch {
+            transactions = []
+            dataStatus = .error(message: "保存済みデータを読み込めませんでした")
+            lastSyncMessage = "保存済みデータを読み込めませんでした"
         }
-        importBundledSample()
     }
 
     private func sortAndSave() {
-        transactions.sort { $0.date > $1.date }
-        save()
-    }
-
-    private func save() {
-        do {
-            let data = try DateCoding.encoder().encode(transactions)
-            try data.write(to: storageURL(), options: [.atomic])
-        } catch {
-            lastSyncMessage = "保存に失敗しました"
+        sortTransactions()
+        if save() {
+            refreshLoadedStatus(message: "保存しました")
         }
     }
 
-    private func storageURL() -> URL {
-        let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return directory.appendingPathComponent(fileName)
+    private func sortTransactions() {
+        transactions.sort { $0.date > $1.date }
+    }
+
+    private func save() -> Bool {
+        do {
+            try repository.saveTransactions(transactions)
+            return true
+        } catch {
+            lastSyncMessage = "保存に失敗しました"
+            dataStatus = .error(message: "保存に失敗しました")
+            return false
+        }
+    }
+
+    private func refreshLoadedStatus(message: String) {
+        if transactions.isEmpty {
+            dataStatus = .empty
+            lastSyncMessage = "明細データはまだありません"
+        } else {
+            dataStatus = .loadedFromDocuments(count: transactions.count, updatedAt: repository.lastModifiedAt())
+            lastSyncMessage = message
+        }
+    }
+
+    private func rowsForImportBase() throws -> [Transaction] {
+        if dataStatus.isSample {
+            guard repository.exists() else {
+                return []
+            }
+            return try repository.loadTransactions()
+        }
+        return transactions.filter { $0.sourceKind != .sample }
+    }
+
+    private func isBundledSampleSet(_ rows: [Transaction]) -> Bool {
+        let sampleIDs = Set(["sample-001", "sample-002", "sample-003", "sample-004", "sample-005"])
+        return rows.count == sampleIDs.count && Set(rows.map(\.sourceMessageId)) == sampleIDs
+    }
+
+    private func writeTemporaryJSON(named name: String, rows: [Transaction]) -> URL? {
+        let url = temporaryURL(named: name)
+        do {
+            let data = try DateCoding.encoder().encode(rows)
+            try data.write(to: url, options: [.atomic])
+            return url
+        } catch {
+            lastSyncMessage = "JSON出力に失敗しました"
+            return nil
+        }
     }
 
     private func temporaryURL(named name: String) -> URL {

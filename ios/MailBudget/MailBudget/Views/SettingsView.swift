@@ -8,6 +8,16 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("読み込み状態") {
+                    DataStatusBanner(status: store.dataStatus)
+                    Text(store.lastSyncMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if let batch = store.lastImportBatch {
+                        ImportResultView(batch: batch)
+                    }
+                }
+
                 Section("メール接続設定") {
                     TextField("メールアドレス", text: $store.mailSource.emailAddress)
                         .textInputAutocapitalization(.never)
@@ -46,10 +56,24 @@ struct SettingsView: View {
                 }
 
                 Section("データ") {
+                    Button {
+                        store.showSampleData()
+                    } label: {
+                        Label("サンプルデータを表示", systemImage: "testtube.2")
+                    }
+
+                    if store.isShowingSample {
+                        Button {
+                            store.clearSampleData()
+                        } label: {
+                            Label("サンプル表示を終了", systemImage: "xmark.circle")
+                        }
+                    }
+
                     Button(role: .destructive) {
                         store.deleteAll()
                     } label: {
-                        Label("全データ削除", systemImage: "trash")
+                        Label("保存済み実データ削除", systemImage: "trash")
                     }
                 }
             }
@@ -60,4 +84,3 @@ struct SettingsView: View {
         }
     }
 }
-

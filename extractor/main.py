@@ -39,6 +39,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         "category",
         "paymentMethod",
         "source",
+        "sourceKind",
         "sourceMessageId",
         "isConfirmed",
         "createdAt",

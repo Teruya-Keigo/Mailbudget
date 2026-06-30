@@ -21,6 +21,7 @@ class Transaction:
     updatedAt: str
     mailReceivedAt: str | None = None
     snippet: str | None = None
+    sourceKind: str = "mailExtracted"
 
     @classmethod
     def create(
@@ -55,4 +56,3 @@ class Transaction:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-

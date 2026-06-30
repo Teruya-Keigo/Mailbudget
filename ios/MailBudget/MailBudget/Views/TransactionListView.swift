@@ -7,9 +7,35 @@ enum TransactionSort: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum TransactionSourceFilter: String, CaseIterable, Identifiable {
+    case all = "すべて"
+    case mailExtracted = "メール抽出データ"
+    case importedJSON = "JSON取込データ"
+    case manual = "手入力データ"
+    case sample = "サンプルデータ"
+
+    var id: String { rawValue }
+
+    var sourceKind: TransactionSourceKind? {
+        switch self {
+        case .all:
+            return nil
+        case .mailExtracted:
+            return .mailExtracted
+        case .importedJSON:
+            return .importedJSON
+        case .manual:
+            return .manual
+        case .sample:
+            return .sample
+        }
+    }
+}
+
 struct TransactionListView: View {
     @EnvironmentObject private var store: TransactionStore
     @State private var selectedCategory = "すべて"
+    @State private var sourceFilter = TransactionSourceFilter.all
     @State private var sort = TransactionSort.dateDescending
 
     private var categories: [String] {
@@ -17,9 +43,12 @@ struct TransactionListView: View {
     }
 
     private var rows: [Transaction] {
-        let filtered = selectedCategory == "すべて"
+        let categoryFiltered = selectedCategory == "すべて"
             ? store.transactions
             : store.transactions.filter { $0.category == selectedCategory }
+        let filtered = sourceFilter.sourceKind.map { kind in
+            categoryFiltered.filter { $0.sourceKind == kind }
+        } ?? categoryFiltered
         switch sort {
         case .dateDescending:
             return filtered.sorted { $0.date > $1.date }
@@ -47,6 +76,11 @@ struct TransactionListView: View {
                 Section {
                     Picker("カテゴリ", selection: $selectedCategory) {
                         ForEach(categories, id: \.self) { Text($0) }
+                    }
+                    Picker("データ種別", selection: $sourceFilter) {
+                        ForEach(TransactionSourceFilter.allCases) { filter in
+                            Text(filter.rawValue).tag(filter)
+                        }
                     }
                     Picker("並び順", selection: $sort) {
                         ForEach(TransactionSort.allCases) { Text($0.rawValue).tag($0) }

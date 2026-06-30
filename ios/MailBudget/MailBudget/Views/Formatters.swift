@@ -17,8 +17,15 @@ enum Formatters {
         return formatter
     }()
 
+    static let dateTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+
     static func yen(_ amount: Int) -> String {
         currency.string(from: NSNumber(value: amount)) ?? "\(amount)円"
     }
 }
-

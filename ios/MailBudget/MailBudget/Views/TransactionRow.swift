@@ -16,7 +16,7 @@ struct TransactionRow: View {
                             .accessibilityLabel("未確認")
                     }
                 }
-                Text("\(Formatters.date.string(from: transaction.date)) ・ \(transaction.category)")
+                Text("\(Formatters.date.string(from: transaction.date)) ・ \(transaction.category) ・ \(transaction.sourceKind.displayName)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -27,4 +27,3 @@ struct TransactionRow: View {
         .padding(.vertical, 4)
     }
 }
-
